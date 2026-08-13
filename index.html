@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
+    <meta charset="UTF-8">
     <title>Portfólio de Gabriel Vinicius de Morais</title>
-    <link rel="stylesheet" href="style.css">    <!--conectar com estilo -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
         <h1>Bem-vindo ao portfólio de Gabriel Vinicius de Morais</h1>
 
-        <nav>      <!-- menu com opcoes -->
+        <nav>
             <ul>
                 <li><a href="index.html">Início</a></li>
                 <li><a href="sobre.html">Sobre Mim</a></li>
@@ -19,18 +20,80 @@
         </nav>
     </header>
     
-    
     <main>
         <h2>Página inicial</h2>
         <p>Este é o meu site pessoal, onde você pode conhecer
              mais sobre mim, minha formação,
               portfólio e entrar em contato.</p>
+
+        <hr style="margin: 20px 0;">
+
+        <h3>Mural de Comentários Públicos:</h3>
+        <textarea id="campo-comentario" rows="4" style="width: 100%;" placeholder="Escreva um comentário..."></textarea><br><br>
+        <button onclick="postarComentario()">Enviar Comentário</button>
+
+        <div id="area-comentarios" style="margin-top: 20px;"></div>
     </main>
 
     <footer>
-        <p> 2024 Gabriel Vinícius</p>
+        <p>2024 Gabriel Vinícius</p>
     </footer>
+
+    <script>
+      const BIN_ID = '6a7dd4c3da38895dfedff2e4';
+      const API_KEY = '$2a$10$Ccomw16Fu3kdGbtDq6pJBesj8JE76jSOlKRHASrY.sWFjmQO/lb7i';
+      const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+      let listaComentarios = [];
+
+      async function carregarComentarios() {
+        try {
+          const res = await fetch(`${API_URL}/latest`, {
+            headers: { 'X-Master-Key': API_KEY }
+          });
+          const data = await res.json();
+          listaComentarios = data.record.comentarios || [];
+
+          const container = document.getElementById('area-comentarios');
+          container.innerHTML = '';
+
+          listaComentarios.forEach(comentario => {
+            const div = document.createElement('div');
+            div.style.borderBottom = '1px solid #ccc';
+            div.style.padding = '10px 0';
+            // VULNERABILIDADE: Injeta direto no DOM sem sanitização
+            div.innerHTML = comentario; 
+            container.appendChild(div);
+          });
+        } catch (err) {
+          console.error("Erro ao carregar comentários:", err);
+        }
+      }
+
+      async function postarComentario() {
+        const texto = document.getElementById('campo-comentario').value;
+        if (!texto) return;
+
+        listaComentarios.push(texto);
+
+        try {
+          await fetch(API_URL, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Master-Key': API_KEY
+            },
+            body: JSON.stringify({ comentarios: listaComentarios })
+          });
+
+          document.getElementById('campo-comentario').value = '';
+          carregarComentarios();
+        } catch (err) {
+          console.error("Erro ao salvar comentário:", err);
+        }
+      }
+
+      window.onload = carregarComentarios;
+    </script>
 </body>
 </html>
-
-
