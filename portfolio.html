@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formação - Gabriel Vinicius de Morais</title>
+    <title>Portfólio - Gabriel Vinicius de Morais</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
+    <header id="site-header">
         <h1>Bem-vindo ao portfólio de Gabriel Vinicius de Morais</h1>
 
         <nav>
-            <ul>   <!-- links -- > <!--->
+            <ul>   <!-- links -->
                 <li><a href="index.html">Início</a></li>
                 <li><a href="sobre.html">Sobre Mim</a></li>
                 <li><a href="formacao.html">Formação</a></li>
@@ -22,34 +22,33 @@
     </header>
     
     <main>
-        <h2>Portifólio</h2>  <!-- link para os meus projetos -->
-        <h3>Aqui estao alguns dos projetos 
-            que trabalhei</h3>
+        <h2>Portfólio</h2>  <!-- link para os meus projetos -->
+        <h3>Aqui estão alguns dos projetos que trabalhei</h3>
         <ul>
-            <li><a href="https://mega.nz/file/cUwjXIJL#864LkzS-ThvUnOT-kAuCxltbbT3FRBgwnaJPv3AzIYo" target="_blank">projeto de banco
-                 de dados</a> -Aqui é feito a modelagem e implementação de um projeto de banco de dados.</li>
-            <li><a href="https://mega.nz/file/gMoyXAQA#9ieasI6CMbTi_FX5WLOKa1DhrzhXp7-mZAjVFb1eGwo" target="_blank">projeto lógica de 
-                programação e algoritimos</a> -Aqui é feitos alguns exemplos de programas que criei usando a linguagem Python.</li> 
-            <li><a href="https://mega.nz/file/Bd4VyDQC#XjcQztlWEvaM-L-LxKJ1FmDu7ze0Rt0ZjbeEw6aE9lo" target="_blank">projeto analise e modelagem de sistemas</a> -Aqui foi onde eu aprendi a fazer
-                diagramas de caso de uso e diagrama de classes.</li>  
+            <li><a href="https://mega.nz/file/cUwjXIJL#864LkzS-ThvUnOT-kAuCxltbbT3FRBgwnaJPv3AzIYo" target="_blank">projeto de banco de dados</a> -Aqui é feito a modelagem e implementação de um projeto de banco de dados.</li>
+            <li><a href="https://mega.nz/file/gMoyXAQA#9ieasI6CMbTi_FX5WLOKa1DhrzhXp7-mZAjVFb1eGwo" target="_blank">projeto lógica de programação e algoritimos</a> -Aqui é feitos alguns exemplos de programas que criei usando a linguagem Python.</li> 
+            <li><a href="https://mega.nz/file/Bd4VyDQC#XjcQztlWEvaM-L-LxKJ1FmDu7ze0Rt0ZjbeEw6aE9lo" target="_blank">projeto analise e modelagem de sistemas</a> -Aqui foi onde eu aprendi a fazer diagramas de caso de uso e diagrama de classes.</li>  
             <li><a href="https://mega.nz/file/RABwGDIS#8g_LsssmM97M_WbwvLMa0mKBP1CCr5uzCIz7zURgy9g" target="_blank">projeto fundamentos da infraestrutura da tecnologia da informação</a> -Aqui eu aprendi como funciona a memoria cache</li>
             <li><a href="https://mega.nz/folder/hYgmFCjS#lumxmpOT5rUmH6HdwXlu7Q" target="_blank">Flappy Bird PC </a> -Meu FlappyBird PC</li> 
             <li><a href="https://mega.nz/file/lMAzzYrI#uc7Z8yE9PaeYbyIjPjmAJHvL2S2NuXc4l58Y7pY_5D0" target="_blank">Acha Primo apk</a> -Meu primeiro app para android que acha numeros primos em Apk</li>
             <li><a href="https://mega.nz/file/0UpXiLoJ#tkpuiqsTqYiBhKuLA6eEM61bH4wGbdt8toWqkKNkzK0" target="_blank">Abrir varios programas</a> Arquivo .bat que abre varios software de 1 vez</li>
-            
         </ul>
     </main>
 
     <footer>
         <p>2024 Gabriel Vinícius</p>
     </footer>
+
+    <script>
+      (function() {
+        const bg = localStorage.getItem('header_bg');
+        const color = localStorage.getItem('header_color');
+        const header = document.getElementById('site-header') || document.querySelector('header');
+        if (header && bg) {
+          header.style.backgroundColor = bg;
+          if (color) header.style.color = color;
+        }
+      })();
+    </script>
 </body>
 </html>
- 
-
-
-
-
-
-
-
