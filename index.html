@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
+    <header id="site-header">
         <h1>Bem-vindo ao portfólio de Gabriel Vinicius de Morais</h1>
 
         <nav>
@@ -18,7 +18,7 @@
             </ul>
         </nav>
     </header>
-    
+
     <main>
         <h2>Página inicial</h2>
         <p>Este é o meu site pessoal, onde você pode conhecer
@@ -29,5 +29,17 @@
     <footer>
         <p>2024 Gabriel Vinícius</p>
     </footer>
+
+    <script>
+      (function() {
+        const bg = localStorage.getItem('header_bg');
+        const color = localStorage.getItem('header_color');
+        const header = document.getElementById('site-header') || document.querySelector('header');
+        if (header && bg) {
+          header.style.backgroundColor = bg;
+          if (color) header.style.color = color;
+        }
+      })();
+    </script>
 </body>
 </html>
