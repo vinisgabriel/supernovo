@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Portfólio de Gabriel Vinicius de Morais</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="site-header">
+        <h1>Bem-vindo ao portfólio de Gabriel Vinicius de Morais</h1>
+
+        <nav>
+            <ul>
+                <li><a href="index.html">Início</a></li>
+                <li><a href="sobre.html">Sobre Mim</a></li>
+                <li><a href="formacao.html">Formação</a></li>
+                <li><a href="portfolio.html">Portfólio</a></li>
+                <li><a href="contato.html">Contato</a></li>
+            </ul>
+        </nav> 
+    </header>
+    
+    <main>
+        <h2>Quem sou eu</h2>
+        <p>Ola meu nome é Gabriel Vinicius de Morais, tenho 25 anos e atualmente estou 
+            cursando engenharia de software.Eu trabalho no ramo de vendas de vidros temperados, 
+            mas assim que eu adquirir experiencia suficiente planejo migrar pra area de TI.</p>
+        <p>Eu pratico bastante atividades fisica como ir na academia
+             diariamente e jogo volei pelo menos 1 vez por mes.</p>    
+    </main>
+
+    <footer>
+        <p>2024 Gabriel Vinícius</p>
+    </footer>
+
+    <script>
+      (function() {
+        const bg = localStorage.getItem('header_bg');
+        const color = localStorage.getItem('header_color');
+        const header = document.getElementById('site-header') || document.querySelector('header');
+        if (header && bg) {
+          header.style.backgroundColor = bg;
+          if (color) header.style.color = color;
+        }
+      })();
+    </script>
+</body>
+</html>
