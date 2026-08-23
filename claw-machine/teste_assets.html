@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste de Assets</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+        }
+        .asset {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px;
+            background: #2d2d4e;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .asset img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            border: 2px solid #4a90e2;
+            border-radius: 8px;
+            background: #0f3460;
+        }
+        .asset .name {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #aaa;
+        }
+        .asset .status {
+            font-size: 11px;
+            margin-top: 3px;
+        }
+        .status.ok { color: #2ecc71; }
+        .status.fail { color: #e74c3c; }
+        h1 { color: #ffd700; }
+        .folder-info {
+            background: #0a0a1a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: monospace;
+            border: 1px solid #4a90e2;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Teste de Assets - Claw Machine</h1>
+    
+    <div class="folder-info">
+        📁 Pasta atual: <span id="currentPath"></span><br>
+        📂 Procurando em: <strong>Images/</strong>
+    </div>
+    
+    <div id="assetsGrid"></div>
+    
+    <div id="result" style="margin-top:20px;padding:15px;border-radius:8px;"></div>
+
+    <script>
+        // LISTA DOS SEUS ASSETS (OBRIGATÓRIO)
+        const ASSETS = [
+            'maquina.png',
+            'trump.png',
+            'Lula.png',
+            'Alexandre.png',
+            'Maduro.png',
+            'Ortega.png',
+            'Carmem Lucia.png',
+            'Gilmar mendes.png'
+        ];
+
+        // Mostra caminho atual
+        document.getElementById('currentPath').textContent = window.location.pathname;
+
+        const grid = document.getElementById('assetsGrid');
+        let loaded = 0;
+        let total = ASSETS.length;
+
+        ASSETS.forEach((filename) => {
+            const div = document.createElement('div');
+            div.className = 'asset';
+            
+            const img = document.createElement('img');
+            img.src = `Images/${filename}`;
+            img.alt = filename;
+            
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'name';
+            nameDiv.textContent = filename;
+            
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'status';
+            statusDiv.textContent = '⏳ Carregando...';
+            
+            div.appendChild(img);
+            div.appendChild(nameDiv);
+            div.appendChild(statusDiv);
+            grid.appendChild(div);
+
+            // Verifica se a imagem carregou
+            img.onload = () => {
+                loaded++;
+                statusDiv.className = 'status ok';
+                statusDiv.textContent = '✅ Carregado!';
+                checkComplete();
+            };
+            
+            img.onerror = () => {
+                loaded++;
+                statusDiv.className = 'status fail';
+                statusDiv.textContent = '❌ FALHA!';
+                checkComplete();
+            };
+        });
+
+        function checkComplete() {
+            const result = document.getElementById('result');
+            if (loaded === total) {
+                const success = document.querySelectorAll('.status.ok').length;
+                const fails = document.querySelectorAll('.status.fail').length;
+                
+                if (fails === 0) {
+                    result.innerHTML = `
+                        <div style="background:#1a3a1a;border:2px solid #2ecc71;padding:20px;border-radius:8px;">
+                            <h2 style="color:#2ecc71;">✅ TODOS OS ASSETS CARREGADOS!</h2>
+                            <p>${success}/${total} imagens carregadas com sucesso.</p>
+                            <p style="margin-top:10px;color:#aaa;">Você pode fechar esta página e abrir o index.html</p>
+                        </div>
+                    `;
+                } else {
+                    result.innerHTML = `
+                        <div style="background:#3a1a1a;border:2px solid #e74c3c;padding:20px;border-radius:8px;">
+                            <h2 style="color:#e74c3c;">❌ ALGUNS ASSETS FALHARAM!</h2>
+                            <p>✅ ${success} carregados | ❌ ${fails} falharam</p>
+                            <p style="margin-top:10px;color:#ff6b6b;font-size:14px;">
+                                Verifique se os arquivos existem na pasta <strong>Images/</strong>
+                            </p>
+                            <p style="margin-top:10px;color:#aaa;font-size:13px;">
+                                Caminho esperado: <br>
+                                <code style="background:#0a0a1a;padding:5px;display:block;margin-top:5px;">
+                                    D:\\Desktop\\jogo de ursinho\\PC_TEST\\Images\\
+                                </code>
+                            </p>
+                        </div>
+                    `;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🦀 Claw Machine - Tela Cheia</title>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0a0a1a;
+            font-family: Arial, sans-serif;
+            touch-action: none;
+        }
+        
+        #fullscreenBtn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 10px 20px;
+            font-size: 16px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            pointer-events: auto;
+        }
+        #fullscreenBtn:hover {
+            background: rgba(255,215,0,0.2);
+            transform: scale(1.05);
+        }
+        
+        #gameWrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+            background: #0a0a1a;
+            padding: 10px;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 1200px;
+            max-height: 750px;
+            background: #0f3460;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(74, 144, 226, 0.3);
+            border: 2px solid #4a90e2;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #0a1a3a;
+            cursor: pointer;
+            touch-action: none;
+        }
+        
+        #scoreBoard {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: rgba(0,0,0,0.85);
+            color: #ffd700;
+            padding: 12px 25px;
+            border-radius: 12px;
+            font-size: clamp(16px, 2.2vw, 26px);
+            font-weight: bold;
+            border: 2px solid #ffd700;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        #statusPanel {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            background: rgba(0,0,0,0.88);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 12px;
+            border: 2px solid #4a90e2;
+            min-width: 140px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        #statusPanel h3 {
+            font-size: clamp(11px, 1.2vw, 16px);
+            margin-bottom: 8px;
+            color: #4a90e2;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        
+        #statusGrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+        }
+        
+        .status-item {
+            background: rgba(255,255,255,0.08);
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: clamp(9px, 1vw, 13px);
+            text-align: center;
+            border-left: 3px solid #4a90e2;
+            transition: all 0.3s;
+        }
+        
+        .status-item.collected {
+            background: rgba(46,204,113,0.25);
+            border-left-color: #2ecc71;
+            color: #2ecc71;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: clamp(10px, 2vw, 25px);
+            z-index: 20;
+            pointer-events: none;
+        }
+        
+        #controls button {
+            pointer-events: auto;
+            padding: clamp(12px, 1.5vh, 20px) clamp(20px, 3vw, 45px);
+            font-size: clamp(20px, 2.5vw, 34px);
+            border: none;
+            border-radius: 12px;
+            background: rgba(52,152,219,0.9);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 6px 0 #2471a3;
+            min-width: clamp(60px, 8vw, 120px);
+            transition: all 0.08s ease;
+            touch-action: manipulation;
+        }
+        
+        #controls button:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #2471a3;
+        }
+        
+        #btnDown {
+            background: rgba(46,204,113,0.9);
+            box-shadow: 0 6px 0 #27ae60;
+            padding: clamp(12px, 1.5vh, 20px) clamp(30px, 4vw, 60px);
+            font-size: clamp(18px, 2vw, 28px);
+        }
+        
+        #btnDown:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #27ae60;
+        }
+        
+        #keyboardHint {
+            position: absolute;
+            bottom: clamp(85px, 12vh, 120px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: #aaa;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: clamp(11px, 1.2vw, 15px);
+            z-index: 15;
+            pointer-events: none;
+            border: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
+        }
+        
+        #keyboardHint span { color: #ffd700; font-weight: bold; }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            z-index: 60;
+            text-align: center;
+        }
+        
+        #loading .spinner {
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top: 4px solid #ffd700;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #captureEffect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 30;
+        }
+        
+        #captureEffect.show { display: flex; animation: flash 0.8s ease-out; }
+        
+        #captureText {
+            font-size: clamp(32px, 5vw, 60px);
+            font-weight: bold;
+            color: #2ecc71;
+            text-shadow: 0 0 40px rgba(46,204,113,0.8);
+            background: rgba(0,0,0,0.6);
+            padding: 20px 40px;
+            border-radius: 20px;
+            border: 3px solid #2ecc71;
+            animation: bounceIn 0.5s ease-out;
+        }
+        
+        @keyframes flash {
+            0% { background: rgba(46,204,113,0); }
+            30% { background: rgba(46,204,113,0.2); }
+            100% { background: rgba(46,204,113,0); }
+        }
+        
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.2); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        #victoryModal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+        
+        #victoryModal.show { display: flex; }
+        
+        #victoryContent {
+            background: linear-gradient(145deg, #1a1a2e, #2d2d4e);
+            padding: clamp(30px, 5vw, 60px) clamp(30px, 6vw, 70px);
+            border-radius: 30px;
+            border: 3px solid #ffd700;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(255,215,0,0.3);
+            animation: bounceIn 0.6s ease-out;
+        }
+        
+        #victoryContent h1 { 
+            color: #ffd700; 
+            font-size: clamp(32px, 5vw, 56px); 
+            margin-bottom: 10px; 
+        }
+        
+        #victoryContent p { 
+            color: white; 
+            font-size: clamp(16px, 2vw, 24px); 
+            margin: 15px 0; 
+        }
+        
+        #victoryContent button {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: clamp(16px, 1.8vw, 22px);
+            border: none;
+            border-radius: 12px;
+            background: #ffd700;
+            color: #1a1a2e;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        #victoryContent button:hover { transform: scale(1.05); }
+        
+        #fullscreenBtn.hidden {
+            display: none;
+        }
+        
+        /* Botão de controle de música */
+        #musicControl {
+            position: absolute;
+            bottom: clamp(80px, 11vh, 110px);
+            right: 20px;
+            z-index: 25;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            pointer-events: auto;
+        }
+        #musicControl:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.1);
+        }
+        
+        @media (max-width: 768px) {
+            #gameWrapper {
+                padding: 5px;
+            }
+            
+            #scoreBoard {
+                top: 10px;
+                right: 12px;
+                padding: 8px 14px;
+                font-size: 14px;
+            }
+            
+            #statusPanel {
+                top: 10px;
+                left: 12px;
+                padding: 8px 10px;
+                min-width: 100px;
+            }
+            
+            #statusPanel h3 {
+                font-size: 10px;
+            }
+            
+            .status-item {
+                font-size: 8px;
+                padding: 3px 4px;
+            }
+            
+            #controls button {
+                padding: 10px 16px;
+                font-size: 18px;
+                min-width: 50px;
+            }
+            
+            #btnDown {
+                padding: 10px 25px;
+                font-size: 16px;
+            }
+            
+            #keyboardHint {
+                font-size: 10px;
+                padding: 4px 12px;
+                bottom: 75px;
+            }
+            
+            #fullscreenBtn {
+                padding: 6px 12px;
+                font-size: 12px;
+                top: 10px;
+                right: 10px;
+            }
+            
+            #musicControl {
+                width: 30px;
+                height: 30px;
+                font-size: 14px;
+                bottom: 65px;
+                right: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="fullscreenBtn">⛶ Tela Cheia</button>
+    
+    <div id="gameWrapper">
+        <div id="gameContainer">
+            <!-- Elemento de áudio -->
+            <audio id="bgMusic" loop preload="auto">
+                <source src="Kalimba.mp3" type="audio/mpeg">
+            </audio>
+            
+            <!-- Botão de controle da música -->
+            <button id="musicControl">🔇</button>
+            
+            <div id="loading">
+                <div>🔄 Carregando Assets...</div>
+                <div class="spinner"></div>
+                <div id="loadProgress" style="font-size:14px;color:#888;">0/8</div>
+            </div>
+            <canvas id="gameCanvas"></canvas>
+            <div id="scoreBoard">⭐ <span id="scoreDisplay">0</span></div>
+            <div id="statusPanel">
+                <h3>📦 Colecionáveis</h3>
+                <div id="statusGrid">
+                    <div class="status-item" data-target="Lula">Lula</div>
+                    <div class="status-item" data-target="Alexandre">Alexandre</div>
+                    <div class="status-item collected" data-target="Maduro">Maduro ✓</div>
+                    <div class="status-item" data-target="Ortega">Ortega</div>
+                    <div class="status-item" data-target="Carmem Lucia">Carmem Lúcia</div>
+                    <div class="status-item" data-target="Gilmar mendes">Gilmar Mendes</div>
+                </div>
+            </div>
+            <div id="keyboardHint">⌨️ <span>← →</span> Mover · <span>Espaço</span> ou <span>↓</span> Pegar</div>
+            <div id="controls">
+                <button id="btnLeft">◀</button>
+                <button id="btnDown">⬇ Pegar</button>
+                <button id="btnRight">▶</button>
+            </div>
+            <div id="captureEffect"><div id="captureText">🎯 Capturado!</div></div>
+            <div id="victoryModal">
+                <div id="victoryContent">
+                    <h1>🎉 PARABÉNS!</h1>
+                    <p>Você capturou todos os alvos!</p>
+                    <p style="color:#ffd700;font-size:clamp(24px,3vw,36px);">⭐ <span id="finalScore">0</span></p>
+                    <button onclick="location.reload()">🔄 Jogar Novamente</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ===== MÚSICA =====
+            const bgMusic = document.getElementById('bgMusic');
+            const musicControl = document.getElementById('musicControl');
+            let isMusicPlaying = false;
+            let musicStarted = false;
+
+            bgMusic.volume = 0.5;
+
+            function startMusic() {
+                if (!musicStarted) {
+                    bgMusic.play().then(() => {
+                        musicStarted = true;
+                        isMusicPlaying = true;
+                        musicControl.textContent = '🔊';
+                        console.log('🎵 Música iniciada!');
+                    }).catch(err => {
+                        console.log('⚠️ Erro ao iniciar música:', err);
+                    });
+                }
+            }
+
+            function toggleMusic() {
+                if (isMusicPlaying) {
+                    bgMusic.pause();
+                    isMusicPlaying = false;
+                    musicControl.textContent = '🔇';
+                    console.log('🔇 Música pausada');
+                } else {
+                    bgMusic.play().then(() => {
+                        isMusicPlaying = true;
+                        musicControl.textContent = '🔊';
+                        console.log('🔊 Música retomada');
+                    }).catch(err => {
+                        console.log('⚠️ Erro ao retomar música:', err);
+                    });
+                }
+            }
+
+            musicControl.addEventListener('click', toggleMusic);
+            musicControl.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                toggleMusic();
+            });
+
+            // Inicia música no primeiro comando do teclado
+            document.addEventListener('keydown', function firstKeyPress(e) {
+                const key = e.key;
+                const controlKeys = ['ArrowLeft', 'ArrowRight', 'ArrowDown', ' ', 'a', 'A', 'd', 'D', 's', 'S'];
+                if (controlKeys.includes(key) || key === ' ') {
+                    startMusic();
+                    document.removeEventListener('keydown', firstKeyPress);
+                }
+            });
+
+            // Inicia música no primeiro clique nos botões
+            const btnLeft = document.getElementById('btnLeft');
+            const btnRight = document.getElementById('btnRight');
+            const btnDown = document.getElementById('btnDown');
+
+            function firstButtonPress() {
+                startMusic();
+                btnLeft.removeEventListener('mousedown', firstButtonPress);
+                btnRight.removeEventListener('mousedown', firstButtonPress);
+                btnDown.removeEventListener('mousedown', firstButtonPress);
+                btnLeft.removeEventListener('touchstart', firstButtonPress);
+                btnRight.removeEventListener('touchstart', firstButtonPress);
+                btnDown.removeEventListener('touchstart', firstButtonPress);
+            }
+
+            btnLeft.addEventListener('mousedown', firstButtonPress);
+            btnRight.addEventListener('mousedown', firstButtonPress);
+            btnDown.addEventListener('mousedown', firstButtonPress);
+            btnLeft.addEventListener('touchstart', firstButtonPress);
+            btnRight.addEventListener('touchstart', firstButtonPress);
+            btnDown.addEventListener('touchstart', firstButtonPress);
+
+            // ===== TELA CHEIA =====
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const gameContainer = document.getElementById('gameContainer');
+
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    if (document.documentElement.requestFullscreen) {
+                        document.documentElement.requestFullscreen().catch(err => {
+                            console.log('Erro ao entrar em tela cheia:', err);
+                        });
+                    } else if (document.documentElement.webkitRequestFullscreen) {
+                        document.documentElement.webkitRequestFullscreen();
+                    } else if (document.documentElement.msRequestFullscreen) {
+                        document.documentElement.msRequestFullscreen();
+                    }
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
+                }
+            }
+
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+            fullscreenBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                toggleFullscreen();
+            });
+
+            document.addEventListener('fullscreenchange', updateButtonText);
+            document.addEventListener('webkitfullscreenchange', updateButtonText);
+            document.addEventListener('mozfullscreenchange', updateButtonText);
+            document.addEventListener('MSFullscreenChange', updateButtonText);
+
+            function updateButtonText() {
+                if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
+                    fullscreenBtn.textContent = '⛶ Sair';
+                    fullscreenBtn.classList.add('hidden');
+                } else {
+                    fullscreenBtn.textContent = '⛶ Tela Cheia';
+                    fullscreenBtn.classList.remove('hidden');
+                }
+            }
+
+            // ===== CONFIGURAÇÕES =====
+            const CONFIG = {
+                machineMargin: 20,
+                clawStartY: 50,
+                clawSpeed: 2.5,
+                clawWidth: 55,
+                clawHeight: 75,
+                itemSize: 75,
+                grabY: 190,
+                moveSpeed: 5,
+                captureRadius: 180,
+                minX: 0,
+                maxX: 0,
+                itemsYPercent: 0.58
+            };
+
+            // ===== ELEMENTOS =====
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const container = document.getElementById('gameContainer');
+            const loading = document.getElementById('loading');
+            const loadProgress = document.getElementById('loadProgress');
+
+            // ===== DIMENSÕES =====
+            let W, H;
+            let gameInitialized = false;
+
+            function updateDimensions() {
+                const rect = container.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                W = canvas.width;
+                H = canvas.height;
+                CONFIG.minX = CONFIG.machineMargin + 60;
+                CONFIG.maxX = W - CONFIG.machineMargin - 60;
+                console.log(`📐 Dimensões atualizadas: ${W}x${H}`);
+            }
+
+            function resize() {
+                updateDimensions();
+                
+                if (gameInitialized && items.length > 0) {
+                    repositionItems();
+                }
+            }
+            window.addEventListener('resize', resize);
+
+            // ===== SEUS ASSETS =====
+            const ASSETS = {
+                maquina: 'Images/maquina.png',
+                maquina1: 'Images/maquina1.png',
+                maquina2: 'Images/maquina2.png',
+                trump: 'Images/trump.png',
+                Lula: 'Images/Lula.png',
+                Alexandre: 'Images/Alexandre.png',
+                Maduro: 'Images/Maduro.png',
+                Ortega: 'Images/Ortega.png',
+                Carmem: 'Images/Carmem Lucia.png',
+                Gilmar: 'Images/Gilmar mendes.png'
+            };
+
+            // ===== IMAGENS =====
+            const images = {};
+            let imagesLoaded = 0;
+            const totalImages = Object.keys(ASSETS).length;
+            let gameReady = false;
+
+            // ===== VARIÁVEL PARA CONTROLE DA MÁQUINA =====
+            let currentMachineImage = 'maquina';
+            let machineTimer = null;
+
+            // ===== FUNÇÃO PARA ALTERNAR A IMAGEM DA MÁQUINA =====
+            function switchMachineImage() {
+                const options = ['maquina', 'maquina1', 'maquina2'];
+                // Remove a atual para não repetir
+                const filtered = options.filter(opt => opt !== currentMachineImage);
+                // Escolhe aleatoriamente entre as outras duas
+                const randomIndex = Math.floor(Math.random() * filtered.length);
+                currentMachineImage = filtered[randomIndex];
+                console.log(`🔄 Máquina alterada para: ${currentMachineImage}`);
+            }
+
+            // ===== ESTADO DO JOGO =====
+            const targets = {
+                'Lula': { collected: false, points: 1 },
+                'Alexandre': { collected: false, points: 1 },
+                'Maduro': { collected: true, points: 0 },
+                'Ortega': { collected: false, points: 1 },
+                'Carmem Lucia': { collected: false, points: 1 },
+                'Gilmar mendes': { collected: false, points: 1 }
+            };
+
+            let score = 0;
+            let gameRunning = true;
+            let items = [];
+            let clawX, clawY;
+            let clawMoving = false;
+            let clawDirection = 1;
+            let clawGrabbing = false;
+            let grabbedTarget = null;
+            let moveLeft = false;
+            let moveRight = false;
+
+            function repositionItems() {
+                if (items.length === 0) return;
+                
+                const available = items.filter(item => !item.grabbed);
+                const totalAvailable = available.length;
+                if (totalAvailable === 0) return;
+                
+                const marginX = CONFIG.machineMargin + 60;
+                const spacingX = Math.min(180, (W - marginX * 2) / (totalAvailable + 1));
+                const startX = marginX;
+                const baseY = H * CONFIG.itemsYPercent;
+                
+                let index = 0;
+                items.forEach(item => {
+                    if (!item.grabbed) {
+                        item.x = startX + (index + 0.5) * spacingX;
+                        item.y = baseY;
+                        index++;
+                    }
+                });
+            }
+
+            // ===== CARREGAR IMAGENS =====
+            function loadImages() {
+                for (let key in ASSETS) {
+                    const img = new Image();
+                    img.src = ASSETS[key];
+                    img.onload = () => {
+                        imagesLoaded++;
+                        loadProgress.textContent = `${imagesLoaded}/${totalImages}`;
+                        console.log(`✅ ${key} carregado`);
+                        images[key] = img;
+                        checkAllLoaded();
+                    };
+                    img.onerror = () => {
+                        imagesLoaded++;
+                        loadProgress.textContent = `${imagesLoaded}/${totalImages}`;
+                        console.warn(`⚠️ Falha: ${ASSETS[key]}`);
+                        images[key] = null;
+                        checkAllLoaded();
+                    };
+                }
+            }
+
+            function checkAllLoaded() {
+                if (imagesLoaded === totalImages) {
+                    console.log('🎯 Todos os assets carregados!');
+                    gameReady = true;
+                    loading.style.display = 'none';
+                    
+                    updateDimensions();
+                    initGame();
+                    
+                    // Inicia o timer para alternar a máquina a cada 2 segundos
+                    startMachineTimer();
+                }
+            }
+
+            // ===== INICIAR TIMER DA MÁQUINA =====
+            function startMachineTimer() {
+                if (machineTimer) {
+                    clearInterval(machineTimer);
+                }
+                machineTimer = setInterval(() => {
+                    if (gameRunning) {
+                        switchMachineImage();
+                    }
+                }, 2000); // 2 segundos
+                console.log('⏰ Timer da máquina iniciado (2 segundos)');
+            }
+
+            // ===== INICIALIZAR =====
+            function initGame() {
+                clawX = W / 2;
+                clawY = CONFIG.clawStartY;
+                items = [];
+
+                const available = Object.keys(targets).filter(key => !targets[key].collected);
+                
+                const marginX = CONFIG.machineMargin + 60;
+                const spacingX = Math.min(180, (W - marginX * 2) / (available.length + 1));
+                const startX = marginX;
+                const baseY = H * CONFIG.itemsYPercent;
+
+                available.forEach((key, index) => {
+                    let imgKey = key;
+                    if (key === 'Carmem Lucia') imgKey = 'Carmem';
+                    if (key === 'Gilmar mendes') imgKey = 'Gilmar';
+                    
+                    items.push({
+                        key: key,
+                        x: startX + (index + 0.5) * spacingX,
+                        y: baseY,
+                        width: CONFIG.itemSize,
+                        height: CONFIG.itemSize,
+                        grabbed: false,
+                        image: images[imgKey] || images['Lula']
+                    });
+                });
+
+                gameInitialized = true;
+                console.log(`📦 ${items.length} alvos posicionados`);
+                console.log(`📏 Altura FIXA em ${Math.round(baseY)}px (${CONFIG.itemsYPercent*100}% da tela)`);
+                console.log('🔄 Máquina alterna a cada 2 segundos!');
+                updateUI();
+                gameLoop();
+            }
+
+            // ===== DESENHAR MÁQUINA (COM ALTERAÇÃO) =====
+            function drawMachine() {
+                const m = CONFIG.machineMargin;
+                
+                // Usa a imagem atual da máquina (currentMachineImage)
+                const machineImg = images[currentMachineImage];
+                
+                if (machineImg && machineImg.complete && machineImg.naturalWidth > 0) {
+                    const img = machineImg;
+                    const aspect = img.width / img.height;
+                    let dw = W - m * 2;
+                    let dh = dw / aspect;
+                    if (dh > H - m * 2) { 
+                        dh = H - m * 2; 
+                        dw = dh * aspect; 
+                    }
+                    const dx = (W - dw) / 2;
+                    const dy = (H - dh) / 2;
+                    ctx.drawImage(img, dx, dy, dw, dh);
+                } else {
+                    // Fallback
+                    ctx.fillStyle = '#1a3a6a';
+                    ctx.fillRect(m, m, W - m * 2, H - m * 2);
+                    ctx.strokeStyle = '#4a8ac4';
+                    ctx.lineWidth = 5;
+                    ctx.shadowColor = '#4a8ac4';
+                    ctx.shadowBlur = 30;
+                    ctx.strokeRect(m, m, W - m * 2, H - m * 2);
+                    ctx.shadowBlur = 0;
+                }
+                
+                // Linha guia
+                ctx.fillStyle = 'rgba(255, 255, 0, 0.15)';
+                const guideY = H * CONFIG.itemsYPercent;
+                ctx.fillRect(CONFIG.machineMargin + 30, guideY - 3, W - CONFIG.machineMargin * 2 - 60, 6);
+                ctx.fillStyle = 'rgba(255, 255, 0, 0.4)';
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText('⬅️ ALVOS AQUI ➡️', W/2, guideY - 8);
+            }
+
+            // ===== DESENHAR ALVOS =====
+            function drawItems() {
+                items.forEach(item => {
+                    if (item.grabbed) return;
+                    
+                    const img = item.image;
+                    const size = CONFIG.itemSize;
+                    
+                    if (img && img.complete && img.naturalWidth > 0) {
+                        ctx.shadowColor = 'rgba(255, 215, 0, 0.3)';
+                        ctx.shadowBlur = 25;
+                        ctx.drawImage(img, item.x - size/2, item.y - size/2, size, size);
+                        ctx.shadowBlur = 0;
+                        
+                        ctx.strokeStyle = '#ffd700';
+                        ctx.lineWidth = 3;
+                        ctx.shadowColor = 'rgba(255, 215, 0, 0.4)';
+                        ctx.shadowBlur = 20;
+                        ctx.strokeRect(item.x - size/2, item.y - size/2, size, size);
+                        ctx.shadowBlur = 0;
+                        
+                        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+                        ctx.font = 'bold 14px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'top';
+                        ctx.fillText(item.key, item.x, item.y + size/2 + 5);
+                    } else {
+                        ctx.fillStyle = '#e74c3c';
+                        ctx.fillRect(item.x - size/2, item.y - size/2, size, size);
+                        ctx.fillStyle = 'white';
+                        ctx.font = 'bold 14px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(item.key.substring(0, 6), item.x, item.y);
+                    }
+                });
+            }
+
+            // ===== DESENHAR GARRA =====
+            function drawClaw() {
+                const cw = CONFIG.clawWidth;
+                const ch = CONFIG.clawHeight;
+                const x = clawX - cw/2;
+                const y = clawY;
+
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = '#7f8c8d';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([3, 5]);
+                ctx.beginPath();
+                ctx.moveTo(W/2, 15);
+                ctx.lineTo(clawX, y + 10);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                if (images.trump && images.trump.complete && images.trump.naturalWidth > 0) {
+                    ctx.shadowColor = 'rgba(255, 215, 0, 0.3)';
+                    ctx.shadowBlur = 25;
+                    ctx.drawImage(images.trump, x, y, cw, ch);
+                    ctx.shadowBlur = 0;
+                } else {
+                    ctx.fillStyle = '#f1c40f';
+                    ctx.fillRect(x, y, cw, ch);
+                }
+
+                let glowColor, statusText, textColor, actionText;
+                
+                if (clawGrabbing) {
+                    glowColor = '#e74c3c';
+                    statusText = '🔴 SUBINDO';
+                    textColor = '#ff6b6b';
+                    actionText = 'AGUARDE...';
+                } else if (clawMoving) {
+                    glowColor = '#f39c12';
+                    statusText = '🟡 DESCENDO';
+                    textColor = '#f39c12';
+                    actionText = 'AGUARDE...';
+                } else {
+                    glowColor = '#2ecc71';
+                    statusText = '🟢 PRONTO!';
+                    textColor = '#2ecc71';
+                    actionText = '⬇ APERTE ESPAÇO';
+                }
+                
+                ctx.shadowColor = glowColor;
+                ctx.shadowBlur = 40;
+                ctx.fillStyle = glowColor;
+                ctx.beginPath();
+                ctx.arc(clawX, y + 20, 12, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                ctx.fillStyle = textColor;
+                ctx.font = 'bold 18px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.shadowColor = 'rgba(0,0,0,0.9)';
+                ctx.shadowBlur = 10;
+                ctx.fillText(statusText, clawX, y + 35);
+                ctx.shadowBlur = 0;
+                
+                ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                ctx.font = 'bold 16px Arial';
+                ctx.textBaseline = 'top';
+                ctx.shadowColor = 'rgba(0,0,0,0.9)';
+                ctx.shadowBlur = 10;
+                ctx.fillText(actionText, clawX, y + 58);
+                ctx.shadowBlur = 0;
+            }
+
+            // ===== COLISÃO =====
+            function checkCollision(cx, cy, item) {
+                const grabX = cx;
+                const grabY = cy + 30;
+                
+                const dx = grabX - item.x;
+                const dy = grabY - item.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                return distance < CONFIG.captureRadius;
+            }
+
+            // ===== UI =====
+            function updateUI() {
+                document.getElementById('scoreDisplay').textContent = score;
+                document.querySelectorAll('.status-item').forEach(el => {
+                    const target = el.dataset.target;
+                    if (target && targets[target]) {
+                        if (targets[target].collected) {
+                            el.classList.add('collected');
+                            el.textContent = target + ' ✓';
+                        } else {
+                            el.classList.remove('collected');
+                            el.textContent = target;
+                        }
+                    }
+                });
+            }
+
+            function showCaptureEffect(key) {
+                const el = document.getElementById('captureEffect');
+                const text = document.getElementById('captureText');
+                text.textContent = `🎯 ${key} Capturado! +1 ponto`;
+                el.classList.add('show');
+                setTimeout(() => el.classList.remove('show'), 1200);
+            }
+
+            function showVictory() {
+                // PARA A MÚSICA QUANDO GANHAR
+                if (isMusicPlaying) {
+                    bgMusic.pause();
+                    isMusicPlaying = false;
+                    musicControl.textContent = '🔇';
+                    console.log('🏆 Vitória! Música parada.');
+                }
+                
+                // PARA O TIMER DA MÁQUINA
+                if (machineTimer) {
+                    clearInterval(machineTimer);
+                    machineTimer = null;
+                    console.log('⏰ Timer da máquina parado (vitória)');
+                }
+                
+                document.getElementById('finalScore').textContent = score;
+                document.getElementById('victoryModal').classList.add('show');
+            }
+
+            // ===== MOVIMENTO =====
+            function moveClaw() {
+                if (!gameRunning) return;
+
+                if (moveLeft && clawX > CONFIG.minX) {
+                    clawX -= CONFIG.moveSpeed;
+                }
+                if (moveRight && clawX < CONFIG.maxX) {
+                    clawX += CONFIG.moveSpeed;
+                }
+
+                if (clawMoving) {
+                    if (clawDirection === 1) {
+                        clawY += CONFIG.clawSpeed;
+                        const maxY = H - CONFIG.grabY;
+                        
+                        if (clawY >= maxY) {
+                            clawDirection = -1;
+                            clawGrabbing = true;
+                            console.log('⬆️ Garra subindo...');
+                            
+                            let caught = false;
+                            for (let item of items) {
+                                if (!item.grabbed) {
+                                    if (checkCollision(clawX, clawY, item)) {
+                                        grabbedTarget = item;
+                                        item.grabbed = true;
+                                        caught = true;
+                                        console.log(`🎯 CAPTUROU: ${item.key}`);
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if (!caught) {
+                                console.log('❌ Nada capturado');
+                                setTimeout(() => { 
+                                    clawGrabbing = false; 
+                                }, 400);
+                            }
+                        }
+                    } else {
+                        clawY -= CONFIG.clawSpeed * 1.2;
+                        
+                        if (clawY <= CONFIG.clawStartY) {
+                            clawMoving = false;
+                            clawDirection = 1;
+                            clawGrabbing = false;
+                            
+                            if (grabbedTarget) {
+                                const key = grabbedTarget.key;
+                                if (!targets[key].collected) {
+                                    targets[key].collected = true;
+                                    score += targets[key].points;
+                                    console.log(`✅ ${key} coletado! Score: ${score}`);
+                                    updateUI();
+                                    showCaptureEffect(key);
+                                    
+                                    items = items.filter(item => item !== grabbedTarget);
+                                    grabbedTarget = null;
+                                    
+                                    if (items.length === 0) {
+                                        gameRunning = false;
+                                        setTimeout(showVictory, 800);
+                                    }
+                                } else {
+                                    grabbedTarget = null;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ===== LOOP =====
+            function gameLoop() {
+                ctx.clearRect(0, 0, W, H);
+                drawMachine();
+                drawItems();
+                drawClaw();
+                moveClaw();
+                requestAnimationFrame(gameLoop);
+            }
+
+            // ===== CONTROLES =====
+            function setupControls() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { 
+                        moveLeft = true; 
+                        e.preventDefault(); 
+                    }
+                    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { 
+                        moveRight = true; 
+                        e.preventDefault(); 
+                    }
+                    if (e.key === ' ' || e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+                        e.preventDefault();
+                        if (!clawMoving && gameRunning && !clawGrabbing) {
+                            clawMoving = true;
+                            clawDirection = 1;
+                            clawGrabbing = false;
+                            console.log('⬇ Garra descendo...');
+                        }
+                    }
+                });
+
+                document.addEventListener('keyup', (e) => {
+                    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') moveLeft = false;
+                    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') moveRight = false;
+                });
+
+                const btnLeft = document.getElementById('btnLeft');
+                const btnRight = document.getElementById('btnRight');
+                const btnDown = document.getElementById('btnDown');
+
+                btnLeft.addEventListener('mousedown', () => moveLeft = true);
+                btnLeft.addEventListener('mouseup', () => moveLeft = false);
+                btnLeft.addEventListener('mouseleave', () => moveLeft = false);
+                
+                btnRight.addEventListener('mousedown', () => moveRight = true);
+                btnRight.addEventListener('mouseup', () => moveRight = false);
+                btnRight.addEventListener('mouseleave', () => moveRight = false);
+
+                btnDown.addEventListener('mousedown', () => {
+                    if (!clawMoving && gameRunning && !clawGrabbing) {
+                        clawMoving = true;
+                        clawDirection = 1;
+                        clawGrabbing = false;
+                        console.log('⬇ Garra descendo...');
+                    }
+                });
+
+                console.log('🎮 Controles configurados!');
+                console.log(`📏 Posição FIXA dos alvos: ${CONFIG.itemsYPercent*100}% da tela`);
+                console.log('🎵 Música começa ao pressionar SETAS, A, D, ESPAÇO ou S');
+                console.log('🔄 Máquina alterna a cada 2 segundos entre 3 imagens!');
+            }
+
+            // ===== INICIAR =====
+            console.log('🚀 Iniciando Claw Machine!');
+            console.log(`📏 Alvos em posição FIXA: ${CONFIG.itemsYPercent*100}% da tela`);
+            console.log('🎵 Música começa ao pressionar qualquer tecla de controle');
+            console.log('🔄 Máquina alterna aleatoriamente a cada 2 segundos!');
+            
+            updateDimensions();
+            loadImages();
+            setupControls();
+            updateUI();
+
+            document.addEventListener('keydown', (e) => {
+                if (['ArrowUp', 'ArrowDown', ' ', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    e.preventDefault();
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'F11') {
+                    e.preventDefault();
+                    toggleFullscreen();
+                }
+            });
+
+        })();
+    </script>
+</body>
+</html>
