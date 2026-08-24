@@ -971,14 +971,6 @@
                         ctx.drawImage(img, item.x - size/2, item.y - size/2, size, size);
                         ctx.shadowBlur = 0;
                         
-                        // ⬅️ RETÂNGULOS REMOVIDOS
-                        // ctx.strokeStyle = '#ffd700';
-                        // ctx.lineWidth = Math.max(2, size * 0.04);
-                        // ctx.shadowColor = 'rgba(255, 215, 0, 0.4)';
-                        // ctx.shadowBlur = 20;
-                        // ctx.strokeRect(item.x - size/2, item.y - size/2, size, size);
-                        // ctx.shadowBlur = 0;
-                        
                         ctx.fillStyle = 'rgba(0,0,0,0.95)';
                         ctx.font = `bold ${Math.max(10, size * 0.2)}px Arial`;
                         ctx.textAlign = 'center';
@@ -1017,7 +1009,7 @@
                 }
             }
 
-            // ===== DESENHAR GARRA =====
+            // ===== DESENHAR GARRA (COM TEXTOS 10x MENORES) =====
             function drawClaw() {
                 const scale = Math.min(scaleX, scaleY);
                 const cw = CONFIG.clawWidth * scale;
@@ -1062,7 +1054,7 @@
                     glowColor = '#2ecc71';
                     statusText = '🟢 PRONTO!';
                     textColor = '#2ecc71';
-                    actionText = '⬇ APERTE PEGAR';
+                    actionText = 'APERTE PEGAR';
                 }
                 
                 ctx.shadowColor = glowColor;
@@ -1073,8 +1065,9 @@
                 ctx.fill();
                 ctx.shadowBlur = 0;
                 
+                // Texto de status (10x menor)
                 ctx.fillStyle = textColor;
-                ctx.font = `bold ${Math.max(11, cw * 0.22)}px Arial`;
+                ctx.font = `bold ${Math.max(11, cw * 0.022)}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
                 ctx.shadowColor = 'rgba(0,0,0,0.9)';
@@ -1082,8 +1075,9 @@
                 ctx.fillText(statusText, clawX, y + 35);
                 ctx.shadowBlur = 0;
                 
+                // Texto de ação (10x menor)
                 ctx.fillStyle = 'rgba(255,255,255,0.9)';
-                ctx.font = `bold ${Math.max(10, cw * 0.18)}px Arial`;
+                ctx.font = `bold ${Math.max(10, cw * 0.018)}px Arial`;
                 ctx.textBaseline = 'top';
                 ctx.shadowColor = 'rgba(0,0,0,0.9)';
                 ctx.shadowBlur = 10;
@@ -1301,12 +1295,14 @@
                 console.log('🎮 Controles configurados!');
                 console.log('✅ Linha amarela removida!');
                 console.log('✅ Retângulos dourados removidos!');
+                console.log('✅ Textos da garra 10x menores!');
             }
 
             // ===== INICIAR =====
-            console.log('🚀 Iniciando Claw Machine - SEM LINHA E SEM RETÂNGULOS!');
+            console.log('🚀 Iniciando Claw Machine - TEXTOS 10x MENORES!');
             console.log('✅ Linha amarela removida');
             console.log('✅ Retângulos dourados removidos');
+            console.log('✅ Textos da garra 10x menores');
             
             updateDimensions();
             loadImages();
