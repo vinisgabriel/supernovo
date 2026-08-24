@@ -164,15 +164,16 @@
         }
         
         #btnDown {
-            background: rgba(46,204,113,0.9);
-            box-shadow: 0 6px 0 #27ae60;
+            background: rgba(255,215,0,0.9);
+            box-shadow: 0 6px 0 #d4a800;
             padding: clamp(12px, 1.5vh, 20px) clamp(30px, 4vw, 60px);
             font-size: clamp(18px, 2vw, 28px);
+            color: #1a1a2e;
         }
         
         #btnDown:active {
             transform: translateY(4px);
-            box-shadow: 0 2px 0 #27ae60;
+            box-shadow: 0 2px 0 #d4a800;
         }
         
         #keyboardHint {
@@ -315,7 +316,6 @@
             display: none;
         }
         
-        /* Botão de controle de música */
         #musicControl {
             position: absolute;
             bottom: clamp(80px, 11vh, 110px);
@@ -407,12 +407,10 @@
     
     <div id="gameWrapper">
         <div id="gameContainer">
-            <!-- Elemento de áudio -->
             <audio id="bgMusic" loop preload="auto">
                 <source src="Kalimba.mp3" type="audio/mpeg">
             </audio>
             
-            <!-- Botão de controle da música -->
             <button id="musicControl">🔇</button>
             
             <div id="loading">
@@ -436,8 +434,8 @@
             <div id="keyboardHint">⌨️ <span>← →</span> Mover · <span>Espaço</span> ou <span>↓</span> Pegar</div>
             <div id="controls">
                 <button id="btnLeft">◀</button>
-                <button id="btnDown">⬇ Pegar</button>
                 <button id="btnRight">▶</button>
+                <button id="btnDown">🎯 Pegar</button>
             </div>
             <div id="captureEffect"><div id="captureText">🎯 Capturado!</div></div>
             <div id="victoryModal">
@@ -499,17 +497,15 @@
                 toggleMusic();
             });
 
-            // Inicia música no primeiro comando do teclado
             document.addEventListener('keydown', function firstKeyPress(e) {
                 const key = e.key;
-                const controlKeys = ['ArrowLeft', 'ArrowRight', 'ArrowDown', ' ', 'a', 'A', 'd', 'D', 's', 'S'];
+                const controlKeys = ['ArrowLeft', 'ArrowRight', ' ', 'a', 'A', 'd', 'D', 'ArrowDown', 's', 'S'];
                 if (controlKeys.includes(key) || key === ' ') {
                     startMusic();
                     document.removeEventListener('keydown', firstKeyPress);
                 }
             });
 
-            // Inicia música no primeiro clique nos botões
             const btnLeft = document.getElementById('btnLeft');
             const btnRight = document.getElementById('btnRight');
             const btnDown = document.getElementById('btnDown');
@@ -579,19 +575,38 @@
             }
 
             // ===== CONFIGURAÇÕES =====
-            const CONFIG = {
+            const BASE_CONFIG = {
                 machineMargin: 20,
-                clawStartY: 50,
-                clawSpeed: 2.5,
-                clawWidth: 55,
-                clawHeight: 75,
+                clawSpeed: 3.5,
+                clawWidth: 80,
+                clawHeight: 100,
                 itemSize: 75,
-                grabY: 190,
+                grabY: 220,
                 moveSpeed: 5,
-                captureRadius: 180,
+                captureRadius: 44,
                 minX: 0,
-                maxX: 0,
-                itemsYPercent: 0.58
+                maxX: 0
+            };
+
+            // ===== POSIÇÃO FIXA DA GARRA EM RELAÇÃO À IMAGEM =====
+            const CLAW_START_POSITION = {
+                x: 500,  // Posição X na imagem (meio)
+                y: 60    // Posição Y na imagem (mais baixa)
+            };
+
+            // ===== POSIÇÃO DO TOPO DA CORRENTE (em relação à imagem) =====
+            const CHAIN_TOP_POSITION = {
+                x: 500,  // Mesmo X da garra
+                y: 50    // Topo do vidro da máquina
+            };
+
+            // ===== POSIÇÕES DOS PERSONAGENS =====
+            const ITEM_ABSOLUTE_POSITIONS = {
+                'Lula': { x: 300, y: 380 },
+                'Alexandre': { x: 255, y: 380 },
+                'Gilmar mendes': { x: 420, y: 305 },
+                'Ortega': { x: 480, y: 305 },
+                'Carmem Lucia': { x: 540, y: 305 }
             };
 
             // ===== ELEMENTOS =====
@@ -604,6 +619,20 @@
             // ===== DIMENSÕES =====
             let W, H;
             let gameInitialized = false;
+            let scaleX = 1;
+            let scaleY = 1;
+            let machineOffsetX = 0;
+            let machineOffsetY = 0;
+            let machineDrawWidth = 0;
+            let machineDrawHeight = 0;
+
+            let CONFIG = { ...BASE_CONFIG };
+
+            // Posições calculadas
+            let clawStartX = 0;
+            let clawStartY = 0;
+            let chainTopX = 0;
+            let chainTopY = 0;
 
             function updateDimensions() {
                 const rect = container.getBoundingClientRect();
@@ -611,16 +640,52 @@
                 canvas.height = rect.height;
                 W = canvas.width;
                 H = canvas.height;
+                
+                const m = CONFIG.machineMargin;
+                const img = images.maquina;
+                if (img && img.complete && img.naturalWidth > 0) {
+                    const aspect = img.width / img.height;
+                    let dw = W - m * 2;
+                    let dh = dw / aspect;
+                    if (dh > H - m * 2) { 
+                        dh = H - m * 2; 
+                        dw = dh * aspect; 
+                    }
+                    machineDrawWidth = dw;
+                    machineDrawHeight = dh;
+                    machineOffsetX = (W - dw) / 2;
+                    machineOffsetY = (H - dh) / 2;
+                    
+                    scaleX = machineDrawWidth / 1000;
+                    scaleY = machineDrawHeight / 650;
+                }
+                
+                // Recalcula a posição inicial da garra baseada na imagem
+                clawStartX = machineOffsetX + (CLAW_START_POSITION.x * scaleX);
+                clawStartY = machineOffsetY + (CLAW_START_POSITION.y * scaleY);
+                
+                // Recalcula o topo da corrente
+                chainTopX = machineOffsetX + (CHAIN_TOP_POSITION.x * scaleX);
+                chainTopY = machineOffsetY + (CHAIN_TOP_POSITION.y * scaleY);
+                
                 CONFIG.minX = CONFIG.machineMargin + 60;
                 CONFIG.maxX = W - CONFIG.machineMargin - 60;
                 console.log(`📐 Dimensões atualizadas: ${W}x${H}`);
+                console.log(`📍 Garra inicia em: (${Math.round(clawStartX)}, ${Math.round(clawStartY)})`);
+                console.log(`📍 Topo da corrente em: (${Math.round(chainTopX)}, ${Math.round(chainTopY)})`);
             }
 
             function resize() {
                 updateDimensions();
                 
-                if (gameInitialized && items.length > 0) {
-                    repositionItems();
+                if (gameInitialized) {
+                    if (!clawMoving) {
+                        clawX = clawStartX;
+                        clawY = clawStartY;
+                    }
+                    if (items.length > 0) {
+                        repositionItems();
+                    }
                 }
             }
             window.addEventListener('resize', resize);
@@ -645,16 +710,12 @@
             const totalImages = Object.keys(ASSETS).length;
             let gameReady = false;
 
-            // ===== VARIÁVEL PARA CONTROLE DA MÁQUINA =====
             let currentMachineImage = 'maquina';
             let machineTimer = null;
 
-            // ===== FUNÇÃO PARA ALTERNAR A IMAGEM DA MÁQUINA =====
             function switchMachineImage() {
                 const options = ['maquina', 'maquina1', 'maquina2'];
-                // Remove a atual para não repetir
                 const filtered = options.filter(opt => opt !== currentMachineImage);
-                // Escolhe aleatoriamente entre as outras duas
                 const randomIndex = Math.floor(Math.random() * filtered.length);
                 currentMachineImage = filtered[randomIndex];
                 console.log(`🔄 Máquina alterada para: ${currentMachineImage}`);
@@ -678,29 +739,28 @@
             let clawDirection = 1;
             let clawGrabbing = false;
             let grabbedTarget = null;
+            let grabbedTargetImage = null;
+            let grabbedTargetKey = null;
             let moveLeft = false;
             let moveRight = false;
 
             function repositionItems() {
                 if (items.length === 0) return;
                 
-                const available = items.filter(item => !item.grabbed);
-                const totalAvailable = available.length;
-                if (totalAvailable === 0) return;
-                
-                const marginX = CONFIG.machineMargin + 60;
-                const spacingX = Math.min(180, (W - marginX * 2) / (totalAvailable + 1));
-                const startX = marginX;
-                const baseY = H * CONFIG.itemsYPercent;
-                
-                let index = 0;
                 items.forEach(item => {
                     if (!item.grabbed) {
-                        item.x = startX + (index + 0.5) * spacingX;
-                        item.y = baseY;
-                        index++;
+                        const pos = ITEM_ABSOLUTE_POSITIONS[item.key];
+                        if (pos) {
+                            item.x = machineOffsetX + (pos.x * scaleX);
+                            item.y = machineOffsetY + (pos.y * scaleY);
+                            
+                            const baseSize = Math.min(scaleX, scaleY) * 75;
+                            item.width = Math.max(40, Math.min(90, baseSize));
+                            item.height = item.width;
+                        }
                     }
                 });
+                console.log('📏 Posições dos itens recalculadas');
             }
 
             // ===== CARREGAR IMAGENS =====
@@ -734,12 +794,10 @@
                     updateDimensions();
                     initGame();
                     
-                    // Inicia o timer para alternar a máquina a cada 2 segundos
                     startMachineTimer();
                 }
             }
 
-            // ===== INICIAR TIMER DA MÁQUINA =====
             function startMachineTimer() {
                 if (machineTimer) {
                     clearInterval(machineTimer);
@@ -748,52 +806,145 @@
                     if (gameRunning) {
                         switchMachineImage();
                     }
-                }, 2000); // 2 segundos
+                }, 2000);
                 console.log('⏰ Timer da máquina iniciado (2 segundos)');
             }
 
             // ===== INICIALIZAR =====
             function initGame() {
-                clawX = W / 2;
-                clawY = CONFIG.clawStartY;
+                clawX = clawStartX;
+                clawY = clawStartY;
                 items = [];
 
                 const available = Object.keys(targets).filter(key => !targets[key].collected);
                 
-                const marginX = CONFIG.machineMargin + 60;
-                const spacingX = Math.min(180, (W - marginX * 2) / (available.length + 1));
-                const startX = marginX;
-                const baseY = H * CONFIG.itemsYPercent;
-
-                available.forEach((key, index) => {
+                available.forEach((key) => {
                     let imgKey = key;
                     if (key === 'Carmem Lucia') imgKey = 'Carmem';
                     if (key === 'Gilmar mendes') imgKey = 'Gilmar';
                     
-                    items.push({
-                        key: key,
-                        x: startX + (index + 0.5) * spacingX,
-                        y: baseY,
-                        width: CONFIG.itemSize,
-                        height: CONFIG.itemSize,
-                        grabbed: false,
-                        image: images[imgKey] || images['Lula']
-                    });
+                    const pos = ITEM_ABSOLUTE_POSITIONS[key];
+                    if (pos) {
+                        const baseSize = Math.min(scaleX, scaleY) * 75;
+                        const size = Math.max(40, Math.min(90, baseSize));
+                        
+                        items.push({
+                            key: key,
+                            x: machineOffsetX + (pos.x * scaleX),
+                            y: machineOffsetY + (pos.y * scaleY),
+                            width: size,
+                            height: size,
+                            grabbed: false,
+                            image: images[imgKey] || images['Lula']
+                        });
+                    }
                 });
 
                 gameInitialized = true;
                 console.log(`📦 ${items.length} alvos posicionados`);
-                console.log(`📏 Altura FIXA em ${Math.round(baseY)}px (${CONFIG.itemsYPercent*100}% da tela)`);
-                console.log('🔄 Máquina alterna a cada 2 segundos!');
+                console.log(`📍 Garra iniciando em: (${Math.round(clawX)}, ${Math.round(clawY)})`);
                 updateUI();
                 gameLoop();
             }
 
-            // ===== DESENHAR MÁQUINA (COM ALTERAÇÃO) =====
+            // ===== DESENHAR CORRENTE =====
+            function drawChain() {
+                const startX = chainTopX;
+                const startY = chainTopY;
+                const endX = clawX;
+                const endY = clawY + 10;
+                
+                // Calcula a distância entre os pontos
+                const dx = endX - startX;
+                const dy = endY - startY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const angle = Math.atan2(dy, dx);
+                
+                // Número de elos baseado na distância
+                const linkSize = 10 * Math.min(scaleX, scaleY);
+                const numLinks = Math.max(3, Math.floor(distance / linkSize));
+                
+                // Desenha cada elo da corrente
+                for (let i = 0; i < numLinks; i++) {
+                    const t = i / numLinks;
+                    const nextT = (i + 0.5) / numLinks;
+                    
+                    const x = startX + dx * t;
+                    const y = startY + dy * t;
+                    const nextX = startX + dx * nextT;
+                    const nextY = startY + dy * nextT;
+                    
+                    const size = linkSize * (0.8 + 0.2 * Math.sin(i * 1.5));
+                    
+                    // Desenha o elo (oval)
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.rotate(angle);
+                    
+                    // Sombra do elo
+                    ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                    ctx.shadowBlur = 5;
+                    
+                    // Elo (dois retângulos arredondados interligados)
+                    const halfSize = size / 2;
+                    const thickness = size * 0.25;
+                    
+                    // Elo principal
+                    ctx.fillStyle = i % 2 === 0 ? '#bdc3c7' : '#95a5a6';
+                    ctx.shadowColor = 'rgba(0,0,0,0.2)';
+                    ctx.shadowBlur = 3;
+                    
+                    // Desenha o formato do elo (retângulo com bordas arredondadas)
+                    ctx.beginPath();
+                    ctx.roundRect(-halfSize, -thickness/2, size, thickness, thickness/2);
+                    ctx.fill();
+                    
+                    // Brilho no elo
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+                    ctx.beginPath();
+                    ctx.roundRect(-halfSize * 0.6, -thickness/3, size * 0.6, thickness/3, thickness/4);
+                    ctx.fill();
+                    
+                    ctx.restore();
+                    
+                    // Pequena conexão entre elos
+                    if (i < numLinks - 1) {
+                        const midX = (x + nextX) / 2;
+                        const midY = (y + nextY) / 2;
+                        ctx.fillStyle = '#7f8c8d';
+                        ctx.shadowColor = 'rgba(0,0,0,0.2)';
+                        ctx.shadowBlur = 2;
+                        ctx.beginPath();
+                        ctx.arc(midX, midY, thickness * 0.3, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    }
+                }
+            }
+
+            // Função auxiliar para roundRect (se não existir no navegador)
+            if (!CanvasRenderingContext2D.prototype.roundRect) {
+                CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                    if (r > w/2) r = w/2;
+                    if (r > h/2) r = h/2;
+                    this.moveTo(x + r, y);
+                    this.lineTo(x + w - r, y);
+                    this.quadraticCurveTo(x + w, y, x + w, y + r);
+                    this.lineTo(x + w, y + h - r);
+                    this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                    this.lineTo(x + r, y + h);
+                    this.quadraticCurveTo(x, y + h, x, y + h - r);
+                    this.lineTo(x, y + r);
+                    this.quadraticCurveTo(x, y, x + r, y);
+                    this.closePath();
+                    return this;
+                };
+            }
+
+            // ===== DESENHAR MÁQUINA =====
             function drawMachine() {
                 const m = CONFIG.machineMargin;
-                
-                // Usa a imagem atual da máquina (currentMachineImage)
                 const machineImg = images[currentMachineImage];
                 
                 if (machineImg && machineImg.complete && machineImg.naturalWidth > 0) {
@@ -807,9 +958,12 @@
                     }
                     const dx = (W - dw) / 2;
                     const dy = (H - dh) / 2;
+                    machineOffsetX = dx;
+                    machineOffsetY = dy;
+                    machineDrawWidth = dw;
+                    machineDrawHeight = dh;
                     ctx.drawImage(img, dx, dy, dw, dh);
                 } else {
-                    // Fallback
                     ctx.fillStyle = '#1a3a6a';
                     ctx.fillRect(m, m, W - m * 2, H - m * 2);
                     ctx.strokeStyle = '#4a8ac4';
@@ -820,9 +974,8 @@
                     ctx.shadowBlur = 0;
                 }
                 
-                // Linha guia
                 ctx.fillStyle = 'rgba(255, 255, 0, 0.15)';
-                const guideY = H * CONFIG.itemsYPercent;
+                const guideY = machineOffsetY + (305 * scaleY);
                 ctx.fillRect(CONFIG.machineMargin + 30, guideY - 3, W - CONFIG.machineMargin * 2 - 60, 6);
                 ctx.fillStyle = 'rgba(255, 255, 0, 0.4)';
                 ctx.font = 'bold 12px Arial';
@@ -837,7 +990,7 @@
                     if (item.grabbed) return;
                     
                     const img = item.image;
-                    const size = CONFIG.itemSize;
+                    const size = item.width || CONFIG.itemSize;
                     
                     if (img && img.complete && img.naturalWidth > 0) {
                         ctx.shadowColor = 'rgba(255, 215, 0, 0.3)';
@@ -846,14 +999,14 @@
                         ctx.shadowBlur = 0;
                         
                         ctx.strokeStyle = '#ffd700';
-                        ctx.lineWidth = 3;
+                        ctx.lineWidth = Math.max(2, size * 0.04);
                         ctx.shadowColor = 'rgba(255, 215, 0, 0.4)';
                         ctx.shadowBlur = 20;
                         ctx.strokeRect(item.x - size/2, item.y - size/2, size, size);
                         ctx.shadowBlur = 0;
                         
                         ctx.fillStyle = 'rgba(255,255,255,0.95)';
-                        ctx.font = 'bold 14px Arial';
+                        ctx.font = `bold ${Math.max(10, size * 0.2)}px Arial`;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'top';
                         ctx.fillText(item.key, item.x, item.y + size/2 + 5);
@@ -861,7 +1014,7 @@
                         ctx.fillStyle = '#e74c3c';
                         ctx.fillRect(item.x - size/2, item.y - size/2, size, size);
                         ctx.fillStyle = 'white';
-                        ctx.font = 'bold 14px Arial';
+                        ctx.font = `bold ${Math.max(10, size * 0.2)}px Arial`;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
                         ctx.fillText(item.key.substring(0, 6), item.x, item.y);
@@ -869,22 +1022,39 @@
                 });
             }
 
+            // ===== DESENHAR ALVO GRUDADO NA GARRA =====
+            function drawGrabbedItem() {
+                if (grabbedTarget && grabbedTargetImage && grabbedTargetImage.complete && grabbedTargetImage.naturalWidth > 0) {
+                    const size = 50 * Math.min(scaleX, scaleY);
+                    const x = clawX - size/2;
+                    const y = clawY + CONFIG.clawHeight * Math.min(scaleX, scaleY) - 10;
+                    
+                    ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
+                    ctx.shadowBlur = 30;
+                    ctx.drawImage(grabbedTargetImage, x, y, size, size);
+                    ctx.shadowBlur = 0;
+                    
+                    ctx.strokeStyle = '#ffd700';
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = 'rgba(255, 215, 0, 0.3)';
+                    ctx.shadowBlur = 15;
+                    ctx.strokeRect(x, y, size, size);
+                    ctx.shadowBlur = 0;
+                }
+            }
+
             // ===== DESENHAR GARRA =====
             function drawClaw() {
-                const cw = CONFIG.clawWidth;
-                const ch = CONFIG.clawHeight;
+                const scale = Math.min(scaleX, scaleY);
+                const cw = CONFIG.clawWidth * scale;
+                const ch = CONFIG.clawHeight * scale;
                 const x = clawX - cw/2;
                 const y = clawY;
 
+                // Desenha a corrente primeiro (atrás da garra)
+                drawChain();
+
                 ctx.shadowBlur = 0;
-                ctx.strokeStyle = '#7f8c8d';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([3, 5]);
-                ctx.beginPath();
-                ctx.moveTo(W/2, 15);
-                ctx.lineTo(clawX, y + 10);
-                ctx.stroke();
-                ctx.setLineDash([]);
 
                 if (images.trump && images.trump.complete && images.trump.naturalWidth > 0) {
                     ctx.shadowColor = 'rgba(255, 215, 0, 0.3)';
@@ -896,35 +1066,42 @@
                     ctx.fillRect(x, y, cw, ch);
                 }
 
+                drawGrabbedItem();
+
                 let glowColor, statusText, textColor, actionText;
                 
                 if (clawGrabbing) {
                     glowColor = '#e74c3c';
-                    statusText = '🔴 SUBINDO';
+                    statusText = '🔴 PEGANDO';
                     textColor = '#ff6b6b';
                     actionText = 'AGUARDE...';
-                } else if (clawMoving) {
+                } else if (clawMoving && clawDirection === 1) {
                     glowColor = '#f39c12';
-                    statusText = '🟡 DESCENDO';
+                    statusText = '🟡 ABAIXANDO';
                     textColor = '#f39c12';
-                    actionText = 'AGUARDE...';
+                    actionText = '↓ ABAIXANDO...';
+                } else if (clawMoving && clawDirection === -1) {
+                    glowColor = '#f39c12';
+                    statusText = '🟡 SUBINDO';
+                    textColor = '#f39c12';
+                    actionText = '⬆ SUBINDO...';
                 } else {
                     glowColor = '#2ecc71';
                     statusText = '🟢 PRONTO!';
                     textColor = '#2ecc71';
-                    actionText = '⬇ APERTE ESPAÇO';
+                    actionText = '⬇ APERTE PEGAR';
                 }
                 
                 ctx.shadowColor = glowColor;
                 ctx.shadowBlur = 40;
                 ctx.fillStyle = glowColor;
                 ctx.beginPath();
-                ctx.arc(clawX, y + 20, 12, 0, Math.PI * 2);
+                ctx.arc(clawX, y + 20, Math.max(8, cw * 0.15), 0, Math.PI * 2);
                 ctx.fill();
                 ctx.shadowBlur = 0;
                 
                 ctx.fillStyle = textColor;
-                ctx.font = 'bold 18px Arial';
+                ctx.font = `bold ${Math.max(11, cw * 0.22)}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
                 ctx.shadowColor = 'rgba(0,0,0,0.9)';
@@ -933,11 +1110,11 @@
                 ctx.shadowBlur = 0;
                 
                 ctx.fillStyle = 'rgba(255,255,255,0.9)';
-                ctx.font = 'bold 16px Arial';
+                ctx.font = `bold ${Math.max(10, cw * 0.18)}px Arial`;
                 ctx.textBaseline = 'top';
                 ctx.shadowColor = 'rgba(0,0,0,0.9)';
                 ctx.shadowBlur = 10;
-                ctx.fillText(actionText, clawX, y + 58);
+                ctx.fillText(actionText, clawX, y + 55 + Math.max(0, cw * 0.05));
                 ctx.shadowBlur = 0;
             }
 
@@ -945,12 +1122,19 @@
             function checkCollision(cx, cy, item) {
                 const grabX = cx;
                 const grabY = cy + 30;
+                const radius = CONFIG.captureRadius * Math.min(scaleX, scaleY);
                 
                 const dx = grabX - item.x;
                 const dy = grabY - item.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
-                return distance < CONFIG.captureRadius;
+                const captured = distance < radius;
+                
+                if (captured) {
+                    console.log(`💥 CAPTUROU ${item.key}! Distância: ${Math.round(distance)}px`);
+                }
+                
+                return captured;
             }
 
             // ===== UI =====
@@ -979,7 +1163,6 @@
             }
 
             function showVictory() {
-                // PARA A MÚSICA QUANDO GANHAR
                 if (isMusicPlaying) {
                     bgMusic.pause();
                     isMusicPlaying = false;
@@ -987,7 +1170,6 @@
                     console.log('🏆 Vitória! Música parada.');
                 }
                 
-                // PARA O TIMER DA MÁQUINA
                 if (machineTimer) {
                     clearInterval(machineTimer);
                     machineTimer = null;
@@ -998,66 +1180,71 @@
                 document.getElementById('victoryModal').classList.add('show');
             }
 
-            // ===== MOVIMENTO =====
+            // ===== MOVIMENTO DA GARRA =====
             function moveClaw() {
                 if (!gameRunning) return;
+                
+                const scale = Math.min(scaleX, scaleY);
+                const moveSpeed = CONFIG.moveSpeed * (scale || 1);
+                const clawSpeed = CONFIG.clawSpeed * (scale || 1);
 
                 if (moveLeft && clawX > CONFIG.minX) {
-                    clawX -= CONFIG.moveSpeed;
+                    clawX -= moveSpeed;
                 }
                 if (moveRight && clawX < CONFIG.maxX) {
-                    clawX += CONFIG.moveSpeed;
+                    clawX += moveSpeed;
                 }
 
                 if (clawMoving) {
                     if (clawDirection === 1) {
-                        clawY += CONFIG.clawSpeed;
-                        const maxY = H - CONFIG.grabY;
+                        clawY += clawSpeed;
                         
-                        if (clawY >= maxY) {
-                            clawDirection = -1;
-                            clawGrabbing = true;
-                            console.log('⬆️ Garra subindo...');
-                            
-                            let caught = false;
-                            for (let item of items) {
-                                if (!item.grabbed) {
-                                    if (checkCollision(clawX, clawY, item)) {
-                                        grabbedTarget = item;
-                                        item.grabbed = true;
-                                        caught = true;
-                                        console.log(`🎯 CAPTUROU: ${item.key}`);
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            if (!caught) {
-                                console.log('❌ Nada capturado');
-                                setTimeout(() => { 
-                                    clawGrabbing = false; 
-                                }, 400);
+                        let found = false;
+                        for (let item of items) {
+                            if (!item.grabbed && checkCollision(clawX, clawY, item)) {
+                                grabbedTarget = item;
+                                grabbedTargetImage = item.image;
+                                grabbedTargetKey = item.key;
+                                item.grabbed = true;
+                                found = true;
+                                clawDirection = -1;
+                                clawGrabbing = true;
+                                console.log(`🎯 CAPTUROU ${item.key}! Subindo imediatamente!`);
+                                break;
                             }
                         }
-                    } else {
-                        clawY -= CONFIG.clawSpeed * 1.2;
                         
-                        if (clawY <= CONFIG.clawStartY) {
+                        const maxY = H - CONFIG.grabY * (scale || 1);
+                        if (!found && clawY >= maxY) {
+                            clawDirection = -1;
+                            clawGrabbing = true;
+                            console.log('⬆️ Garra subindo (nada capturado)');
+                            setTimeout(() => { 
+                                clawGrabbing = false; 
+                            }, 300);
+                        }
+                        
+                    } else {
+                        clawY -= clawSpeed * 1.2;
+                        
+                        if (clawY <= clawStartY) {
                             clawMoving = false;
                             clawDirection = 1;
                             clawGrabbing = false;
                             
                             if (grabbedTarget) {
-                                const key = grabbedTarget.key;
-                                if (!targets[key].collected) {
+                                const key = grabbedTargetKey;
+                                if (key && !targets[key].collected) {
                                     targets[key].collected = true;
                                     score += targets[key].points;
                                     console.log(`✅ ${key} coletado! Score: ${score}`);
                                     updateUI();
                                     showCaptureEffect(key);
                                     
-                                    items = items.filter(item => item !== grabbedTarget);
+                                    items = items.filter(item => item.key !== key);
                                     grabbedTarget = null;
+                                    grabbedTargetImage = null;
+                                    grabbedTargetKey = null;
                                     
                                     if (items.length === 0) {
                                         gameRunning = false;
@@ -1065,10 +1252,22 @@
                                     }
                                 } else {
                                     grabbedTarget = null;
+                                    grabbedTargetImage = null;
+                                    grabbedTargetKey = null;
                                 }
                             }
                         }
                     }
+                }
+            }
+
+            // ===== FUNÇÃO PEGAR =====
+            function captureClaw() {
+                if (!clawMoving && gameRunning && !clawGrabbing) {
+                    console.log('🎯 PEGAR!');
+                    clawMoving = true;
+                    clawDirection = 1;
+                    clawGrabbing = false;
                 }
             }
 
@@ -1095,12 +1294,7 @@
                     }
                     if (e.key === ' ' || e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
                         e.preventDefault();
-                        if (!clawMoving && gameRunning && !clawGrabbing) {
-                            clawMoving = true;
-                            clawDirection = 1;
-                            clawGrabbing = false;
-                            console.log('⬇ Garra descendo...');
-                        }
+                        captureClaw();
                     }
                 });
 
@@ -1122,25 +1316,26 @@
                 btnRight.addEventListener('mouseleave', () => moveRight = false);
 
                 btnDown.addEventListener('mousedown', () => {
-                    if (!clawMoving && gameRunning && !clawGrabbing) {
-                        clawMoving = true;
-                        clawDirection = 1;
-                        clawGrabbing = false;
-                        console.log('⬇ Garra descendo...');
-                    }
+                    captureClaw();
                 });
 
+                btnLeft.addEventListener('touchstart', (e) => { e.preventDefault(); moveLeft = true; });
+                btnLeft.addEventListener('touchend', (e) => { e.preventDefault(); moveLeft = false; });
+                btnRight.addEventListener('touchstart', (e) => { e.preventDefault(); moveRight = true; });
+                btnRight.addEventListener('touchend', (e) => { e.preventDefault(); moveRight = false; });
+                btnDown.addEventListener('touchstart', (e) => { e.preventDefault(); captureClaw(); });
+
                 console.log('🎮 Controles configurados!');
-                console.log(`📏 Posição FIXA dos alvos: ${CONFIG.itemsYPercent*100}% da tela`);
-                console.log('🎵 Música começa ao pressionar SETAS, A, D, ESPAÇO ou S');
-                console.log('🔄 Máquina alterna a cada 2 segundos entre 3 imagens!');
+                console.log('📋 ← → = Mover');
+                console.log('📋 ESPAÇO ou ↓ = Pegar');
+                console.log('📍 Corrente começa no topo do vidro da máquina!');
+                console.log('⛓️ Efeito de corrente com elos!');
             }
 
             // ===== INICIAR =====
-            console.log('🚀 Iniciando Claw Machine!');
-            console.log(`📏 Alvos em posição FIXA: ${CONFIG.itemsYPercent*100}% da tela`);
-            console.log('🎵 Música começa ao pressionar qualquer tecla de controle');
-            console.log('🔄 Máquina alterna aleatoriamente a cada 2 segundos!');
+            console.log('🚀 Iniciando Claw Machine - CORRENTE!');
+            console.log('📍 Corrente começa no topo do vidro da máquina');
+            console.log('⛓️ Efeito de corrente com elos');
             
             updateDimensions();
             loadImages();
