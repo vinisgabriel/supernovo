@@ -578,8 +578,8 @@
             const BASE_CONFIG = {
                 machineMargin: 20,
                 clawSpeed: 3.5,
-                clawWidth: 80,
-                clawHeight: 100,
+                clawWidth: 160,
+                clawHeight: 140,
                 itemSize: 75,
                 grabY: 220,
                 moveSpeed: 5,
@@ -590,14 +590,14 @@
 
             // ===== POSIÇÃO FIXA DA GARRA EM RELAÇÃO À IMAGEM =====
             const CLAW_START_POSITION = {
-                x: 500,  // Posição X na imagem (meio)
-                y: 60    // Posição Y na imagem (mais baixa)
+                x: 500,
+                y: 60
             };
 
-            // ===== POSIÇÃO DO TOPO DA CORRENTE (em relação à imagem) =====
+            // ===== POSIÇÃO DO TOPO DA CORRENTE =====
             const CHAIN_TOP_POSITION = {
-                x: 500,  // Mesmo X da garra
-                y: 50    // Topo do vidro da máquina
+                x: 500,
+                y: 50
             };
 
             // ===== POSIÇÕES DOS PERSONAGENS =====
@@ -628,7 +628,6 @@
 
             let CONFIG = { ...BASE_CONFIG };
 
-            // Posições calculadas
             let clawStartX = 0;
             let clawStartY = 0;
             let chainTopX = 0;
@@ -660,19 +659,14 @@
                     scaleY = machineDrawHeight / 650;
                 }
                 
-                // Recalcula a posição inicial da garra baseada na imagem
                 clawStartX = machineOffsetX + (CLAW_START_POSITION.x * scaleX);
                 clawStartY = machineOffsetY + (CLAW_START_POSITION.y * scaleY);
-                
-                // Recalcula o topo da corrente
                 chainTopX = machineOffsetX + (CHAIN_TOP_POSITION.x * scaleX);
                 chainTopY = machineOffsetY + (CHAIN_TOP_POSITION.y * scaleY);
                 
                 CONFIG.minX = CONFIG.machineMargin + 60;
                 CONFIG.maxX = W - CONFIG.machineMargin - 60;
                 console.log(`📐 Dimensões atualizadas: ${W}x${H}`);
-                console.log(`📍 Garra inicia em: (${Math.round(clawStartX)}, ${Math.round(clawStartY)})`);
-                console.log(`📍 Topo da corrente em: (${Math.round(chainTopX)}, ${Math.round(chainTopY)})`);
             }
 
             function resize() {
@@ -842,7 +836,6 @@
 
                 gameInitialized = true;
                 console.log(`📦 ${items.length} alvos posicionados`);
-                console.log(`📍 Garra iniciando em: (${Math.round(clawX)}, ${Math.round(clawY)})`);
                 updateUI();
                 gameLoop();
             }
@@ -854,17 +847,14 @@
                 const endX = clawX;
                 const endY = clawY + 10;
                 
-                // Calcula a distância entre os pontos
                 const dx = endX - startX;
                 const dy = endY - startY;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 const angle = Math.atan2(dy, dx);
                 
-                // Número de elos baseado na distância
                 const linkSize = 10 * Math.min(scaleX, scaleY);
                 const numLinks = Math.max(3, Math.floor(distance / linkSize));
                 
-                // Desenha cada elo da corrente
                 for (let i = 0; i < numLinks; i++) {
                     const t = i / numLinks;
                     const nextT = (i + 0.5) / numLinks;
@@ -876,30 +866,24 @@
                     
                     const size = linkSize * (0.8 + 0.2 * Math.sin(i * 1.5));
                     
-                    // Desenha o elo (oval)
                     ctx.save();
                     ctx.translate(x, y);
                     ctx.rotate(angle);
                     
-                    // Sombra do elo
                     ctx.shadowColor = 'rgba(0,0,0,0.3)';
                     ctx.shadowBlur = 5;
                     
-                    // Elo (dois retângulos arredondados interligados)
                     const halfSize = size / 2;
                     const thickness = size * 0.25;
                     
-                    // Elo principal
                     ctx.fillStyle = i % 2 === 0 ? '#bdc3c7' : '#95a5a6';
                     ctx.shadowColor = 'rgba(0,0,0,0.2)';
                     ctx.shadowBlur = 3;
                     
-                    // Desenha o formato do elo (retângulo com bordas arredondadas)
                     ctx.beginPath();
                     ctx.roundRect(-halfSize, -thickness/2, size, thickness, thickness/2);
                     ctx.fill();
                     
-                    // Brilho no elo
                     ctx.shadowBlur = 0;
                     ctx.fillStyle = 'rgba(255,255,255,0.15)';
                     ctx.beginPath();
@@ -908,7 +892,6 @@
                     
                     ctx.restore();
                     
-                    // Pequena conexão entre elos
                     if (i < numLinks - 1) {
                         const midX = (x + nextX) / 2;
                         const midY = (y + nextY) / 2;
@@ -923,7 +906,6 @@
                 }
             }
 
-            // Função auxiliar para roundRect (se não existir no navegador)
             if (!CanvasRenderingContext2D.prototype.roundRect) {
                 CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
                     if (r > w/2) r = w/2;
@@ -942,7 +924,7 @@
                 };
             }
 
-            // ===== DESENHAR MÁQUINA =====
+            // ===== DESENHAR MÁQUINA (SEM LINHA AMARELA) =====
             function drawMachine() {
                 const m = CONFIG.machineMargin;
                 const machineImg = images[currentMachineImage];
@@ -973,18 +955,9 @@
                     ctx.strokeRect(m, m, W - m * 2, H - m * 2);
                     ctx.shadowBlur = 0;
                 }
-                
-                ctx.fillStyle = 'rgba(255, 255, 0, 0.15)';
-                const guideY = machineOffsetY + (305 * scaleY);
-                ctx.fillRect(CONFIG.machineMargin + 30, guideY - 3, W - CONFIG.machineMargin * 2 - 60, 6);
-                ctx.fillStyle = 'rgba(255, 255, 0, 0.4)';
-                ctx.font = 'bold 12px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'bottom';
-                ctx.fillText('⬅️ ALVOS AQUI ➡️', W/2, guideY - 8);
             }
 
-            // ===== DESENHAR ALVOS =====
+            // ===== DESENHAR ALVOS (SEM RETÂNGULOS) =====
             function drawItems() {
                 items.forEach(item => {
                     if (item.grabbed) return;
@@ -998,12 +971,13 @@
                         ctx.drawImage(img, item.x - size/2, item.y - size/2, size, size);
                         ctx.shadowBlur = 0;
                         
-                        ctx.strokeStyle = '#ffd700';
-                        ctx.lineWidth = Math.max(2, size * 0.04);
-                        ctx.shadowColor = 'rgba(255, 215, 0, 0.4)';
-                        ctx.shadowBlur = 20;
-                        ctx.strokeRect(item.x - size/2, item.y - size/2, size, size);
-                        ctx.shadowBlur = 0;
+                        // ⬅️ RETÂNGULOS REMOVIDOS
+                        // ctx.strokeStyle = '#ffd700';
+                        // ctx.lineWidth = Math.max(2, size * 0.04);
+                        // ctx.shadowColor = 'rgba(255, 215, 0, 0.4)';
+                        // ctx.shadowBlur = 20;
+                        // ctx.strokeRect(item.x - size/2, item.y - size/2, size, size);
+                        // ctx.shadowBlur = 0;
                         
                         ctx.fillStyle = 'rgba(0,0,0,0.95)';
                         ctx.font = `bold ${Math.max(10, size * 0.2)}px Arial`;
@@ -1051,7 +1025,6 @@
                 const x = clawX - cw/2;
                 const y = clawY;
 
-                // Desenha a corrente primeiro (atrás da garra)
                 drawChain();
 
                 ctx.shadowBlur = 0;
@@ -1326,16 +1299,14 @@
                 btnDown.addEventListener('touchstart', (e) => { e.preventDefault(); captureClaw(); });
 
                 console.log('🎮 Controles configurados!');
-                console.log('📋 ← → = Mover');
-                console.log('📋 ESPAÇO ou ↓ = Pegar');
-                console.log('📍 Corrente começa no topo do vidro da máquina!');
-                console.log('⛓️ Efeito de corrente com elos!');
+                console.log('✅ Linha amarela removida!');
+                console.log('✅ Retângulos dourados removidos!');
             }
 
             // ===== INICIAR =====
-            console.log('🚀 Iniciando Claw Machine - CORRENTE!');
-            console.log('📍 Corrente começa no topo do vidro da máquina');
-            console.log('⛓️ Efeito de corrente com elos');
+            console.log('🚀 Iniciando Claw Machine - SEM LINHA E SEM RETÂNGULOS!');
+            console.log('✅ Linha amarela removida');
+            console.log('✅ Retângulos dourados removidos');
             
             updateDimensions();
             loadImages();
